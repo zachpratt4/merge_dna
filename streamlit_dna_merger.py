@@ -8,17 +8,20 @@ def reverse_complement(seq):
     """Returns the reverse complement of a DNA sequence."""
     return str(Seq.Seq(seq).reverse_complement())
 
-def find_overlap(seq1, seq2, min_overlap=10):
-    """Finds the maximum overlap between two sequences and returns the merged sequence."""
+def find_overlap(seq1, seq2, min_overlap=20):
+    """Finds the maximum overlap between two sequences with no mismatches allowed."""
     max_overlap = 0
     merged_sequence = ""
     best_match = ""
     
     for i in range(min_overlap, len(seq1)):
-        if seq2.startswith(seq1[i:]):
-            max_overlap = len(seq1) - i
+        overlap_seq1 = seq1[i:]
+        overlap_seq2 = seq2[:len(overlap_seq1)]
+        
+        if overlap_seq1 == overlap_seq2:
+            max_overlap = len(overlap_seq1)
             merged_sequence = seq1 + seq2[max_overlap:]
-            best_match = seq1[i:]
+            best_match = overlap_seq1
             break
     
     return merged_sequence, max_overlap, best_match
@@ -41,6 +44,9 @@ def merge_sequences(sequences):
         
         merged_sense, overlap_sense, match_sense = find_overlap(merged_seq, sense_seq)
         merged_antisense, overlap_antisense, match_antisense = find_overlap(merged_seq, antisense_seq)
+        
+        if max(overlap_sense, overlap_antisense) < 20:
+            return None, [(i, "Overlap too short (<20 bases)", 0, "N/A", [])]
         
         if overlap_sense >= overlap_antisense:
             merged_seq = merged_sense
@@ -79,16 +85,22 @@ if st.button("Merge Sequences"):
             st.error("Please provide at least two sequences in FASTA format.")
         else:
             merged_sequence, merge_results = merge_sequences(sequences)
-            st.subheader("Merged Sequence:")
-            st.text_area("", merged_sequence, height=200)
-            
-            st.subheader("Merge Details:")
-            for res in merge_results:
-                i, overlap, percent_identity, orientation, differences = res
-                st.write(f"**Merged with sequence {i}:**")
-                st.write(f"Overlap: {overlap} bases, Percent Identity: {percent_identity:.2f}%, Orientation: {orientation}")
-                if differences:
-                    st.write("Differences in overlap:")
-                    st.write("\n".join(differences))
+            if merged_sequence is None:
+                st.error("Overlap too short (<20 bases). Unable to merge sequences.")
+            else:
+                st.subheader("Merged Sequence:")
+                st.text_area("", merged_sequence, height=200)
+                
+                st.subheader("Merge Details:")
+                for res in merge_results:
+                    i, overlap, percent_identity, orientation, differences = res
+                    if isinstance(overlap, str):
+                        st.write(f"**Error merging sequence {i}: {overlap}**")
+                    else:
+                        st.write(f"**Merged with sequence {i}:**")
+                        st.write(f"Overlap: {overlap} bases, Percent Identity: {percent_identity:.2f}%, Orientation: {orientation}")
+                        if differences:
+                            st.write("Differences in overlap:")
+                            st.write("\n".join(differences))
     else:
         st.error("Please paste sequences in FASTA format.")
