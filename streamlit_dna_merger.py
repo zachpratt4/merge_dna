@@ -2,6 +2,7 @@ import streamlit as st
 from Bio import Seq
 from Bio import SeqIO
 from difflib import ndiff
+import io
 
 def reverse_complement(seq):
     """Returns the reverse complement of a DNA sequence."""
@@ -62,7 +63,8 @@ def merge_sequences(sequences):
 def parse_fasta(fasta_text):
     """Parses FASTA format sequences from user input."""
     sequences = []
-    for record in SeqIO.parse(fasta_text.splitlines(), "fasta"):
+    fasta_io = io.StringIO(fasta_text)  # Convert string to file-like object
+    for record in SeqIO.parse(fasta_io, "fasta"):
         sequences.append(str(record.seq).upper())
     return sequences
 
