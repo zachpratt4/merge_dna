@@ -49,7 +49,8 @@ def merge_sequences(sequences):
         merged_sense, overlap_sense, match_sense = find_overlap(merged_seq, sequence)
         
         if overlap_sense < 20:
-            return None, [(i, "Overlap too short (<20 bases)", 0, "N/A", [])]
+            results.append((i, "Overlap too short (<20 bases)", 0, "N/A", []))
+            continue
         
         merged_seq = merged_sense
         best_match = match_sense
@@ -78,24 +79,15 @@ def parse_fasta(fasta_text):
 st.title("DNA Sequence Merger")
 
 st.write("""
-### Instructions:
-1. Paste DNA sequences in FASTA format below.
-2. If a sequence is in the antisense direction, specify it in the header by adding 'antisense' after the sequence name.
-3. The program will merge overlapping sequences with a minimum of 20 bases of exact match.
-4. The output will include the merged sequence and details about the overlap.
-
-#### Example Input (FASTA format):
+Paste FASTA sequences below. If a sequence is in the antisense direction, specify it in the header by adding 'antisense' after the sequence name.
+Example:
 ```
 >sequence1
 ATGCGTACGTTAGC
 >sequence2 antisense
 GCTAACGTACGCAT
 ```
-
-#### Expected Output:
-- Merged sequence
-- Details on overlap, including position and percent identity
-- Notification if sequences cannot be merged due to insufficient overlap
+The merged DNA sequence will be output in the 5' to 3' orientation, along with its length.
 """)
 
 fasta_input = st.text_area("Paste FASTA sequences here:")
@@ -108,16 +100,21 @@ if st.button("Merge Sequences"):
         else:
             merged_sequence, merge_results = merge_sequences(sequences)
             if merged_sequence is None:
-                st.error("Overlap too short (<20 bases). Unable to merge sequences.")
+                st.error("Some sequences had an overlap too short (<20 bases). Unable to merge all sequences.")
+                for res in merge_results:
+                    i, overlap, _, _, _ = res
+                    if isinstance(overlap, str):
+                        st.write(f"**Sequence {i}: {overlap}**")
             else:
                 st.subheader("Merged Sequence:")
                 st.text_area("", merged_sequence, height=200)
+                st.write(f"**Length: {len(merged_sequence)} bases**")
                 
                 st.subheader("Merge Details:")
                 for res in merge_results:
                     i, overlap, percent_identity, orientation, differences = res
                     if isinstance(overlap, str):
-                        st.write(f"**Error merging sequence {i}: {overlap}**")
+                        st.write(f"**Sequence {i}: {overlap}**")
                     else:
                         st.write(f"**Merged with sequence {i}:**")
                         st.write(f"Overlap: {overlap} bases, Percent Identity: {percent_identity:.2f}%, Orientation: {orientation}")
