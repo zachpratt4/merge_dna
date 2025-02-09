@@ -79,7 +79,7 @@ def parse_fasta(fasta_text):
 st.title("DNA Sequence Merger")
 
 st.write("""
-Paste FASTA sequences below. If a sequence is in the antisense direction, specify it in the header by adding 'antisense' after the sequence name.
+Paste FASTA sequences below in order from 5'-most sequence to 3'-most sequence. If a sequence is in the antisense direction, specify it in the header by adding 'antisense' after the sequence name.
 Example:
 ```
 >sequence1
