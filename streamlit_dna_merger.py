@@ -36,45 +36,57 @@ def identify_differences(seq1, seq2):
 
 def merge_sequences(sequences):
     """Merges a list of DNA sequences, considering sense and antisense directions."""
-    merged_seq = sequences[0]
+    merged_seq = sequences[0]["sequence"]
     results = []
     for i in range(1, len(sequences)):
-        sense_seq = sequences[i]
-        antisense_seq = reverse_complement(sequences[i])
+        sequence_entry = sequences[i]
+        sequence = sequence_entry["sequence"]
+        direction = sequence_entry["direction"]
         
-        merged_sense, overlap_sense, match_sense = find_overlap(merged_seq, sense_seq)
-        merged_antisense, overlap_antisense, match_antisense = find_overlap(merged_seq, antisense_seq)
+        if direction == "antisense":
+            sequence = reverse_complement(sequence)
         
-        if max(overlap_sense, overlap_antisense) < 20:
+        merged_sense, overlap_sense, match_sense = find_overlap(merged_seq, sequence)
+        
+        if overlap_sense < 20:
             return None, [(i, "Overlap too short (<20 bases)", 0, "N/A", [])]
         
-        if overlap_sense >= overlap_antisense:
-            merged_seq = merged_sense
-            best_match = match_sense
-            overlap = overlap_sense
-            orientation = "Sense"
-        else:
-            merged_seq = merged_antisense
-            best_match = match_antisense
-            overlap = overlap_antisense
-            orientation = "Antisense"
+        merged_seq = merged_sense
+        best_match = match_sense
+        overlap = overlap_sense
+        orientation = "Sense" if direction == "sense" else "Antisense"
         
         percent_identity = (overlap / len(best_match)) * 100 if best_match else 0
-        differences = identify_differences(best_match, sequences[i][:overlap])
+        differences = identify_differences(best_match, sequence[:overlap])
         
         results.append((i, overlap, percent_identity, orientation, differences))
     
     return merged_seq, results
 
 def parse_fasta(fasta_text):
-    """Parses FASTA format sequences from user input."""
+    """Parses FASTA format sequences from user input with direction information."""
     sequences = []
     fasta_io = io.StringIO(fasta_text)  # Convert string to file-like object
     for record in SeqIO.parse(fasta_io, "fasta"):
-        sequences.append(str(record.seq).upper())
+        header = record.description.split()
+        direction = "sense"
+        if len(header) > 1 and header[1].lower() == "antisense":
+            direction = "antisense"
+        sequences.append({"sequence": str(record.seq).upper(), "direction": direction})
     return sequences
 
 st.title("DNA Sequence Merger")
+
+st.write("""
+Paste FASTA sequences below. If a sequence is in the antisense direction, specify it in the header by adding 'antisense' after the sequence name.
+Example:
+```
+>sequence1
+ATGCGTACGTTAGC
+>sequence2 antisense
+GCTAACGTACGCAT
+```
+""")
 
 fasta_input = st.text_area("Paste FASTA sequences here:")
 
