@@ -78,14 +78,24 @@ def parse_fasta(fasta_text):
 st.title("DNA Sequence Merger")
 
 st.write("""
-Paste FASTA sequences below. If a sequence is in the antisense direction, specify it in the header by adding 'antisense' after the sequence name.
-Example:
+### Instructions:
+1. Paste DNA sequences in FASTA format below.
+2. If a sequence is in the antisense direction, specify it in the header by adding 'antisense' after the sequence name.
+3. The program will merge overlapping sequences with a minimum of 20 bases of exact match.
+4. The output will include the merged sequence and details about the overlap.
+
+#### Example Input (FASTA format):
 ```
 >sequence1
 ATGCGTACGTTAGC
 >sequence2 antisense
 GCTAACGTACGCAT
 ```
+
+#### Expected Output:
+- Merged sequence
+- Details on overlap, including position and percent identity
+- Notification if sequences cannot be merged due to insufficient overlap
 """)
 
 fasta_input = st.text_area("Paste FASTA sequences here:")
